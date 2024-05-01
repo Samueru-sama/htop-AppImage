@@ -38,5 +38,5 @@ wget -q "$APPIMAGETOOL" -O ./appimagetool && chmod a+x ./appimagetool
 ARCH=x86_64 VERSION="$APPVERSION" ./appimagetool -s ./"$APPDIR"
 ls ./*.AppImage || { echo "appimagetool failed to make the appimage"; exit 1; }
 if [ -z "$APP" ]; then exit 1; fi # Being extra safe lol
-mv ./*.AppImage .. && cd .. && rm -rf "./$APP"
+mv ./*.AppImage .. && cd .. && rm -rf ./"$APP"
 echo "All Done!"
