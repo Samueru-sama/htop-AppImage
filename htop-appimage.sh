@@ -11,10 +11,12 @@ mkdir -p ./"$APP/$APPDIR" && cd ./"$APP/$APPDIR" || exit 1
 # DOWNLOAD AND BUILD HTOP
 CURRENTDIR="$(readlink -f "$(dirname "$0")")" # DO NOT MOVE THIS
 version=$(wget -q https://api.github.com/repos/$SITE/releases -O - | sed 's/[()",{}]/ /g; s/ /\n/g' | grep -o 'https.*releases.*htop.*tar.xz' | head -1)
-wget "$version" && tar fx ./*tar* && cd ./htop* && ./autogen.sh && ./configure --prefix="$CURRENTDIR" && make && make install && cd .. && rm -rf ./htop* ./*tar* || exit 1
+wget "$version" && tar fx ./*tar* && cd ./htop* && ./autogen.sh && ./configure --prefix="$CURRENTDIR" && make && make install && cd .. || exit 1
+find ./bin/* -type f -executable -exec sed -i -e "s|/usr|././|g" {} \; && echo "binary patched" && rm -rf ./htop* ./*tar* || exit 1
 
 # PREPARE APPIMAGE
-cp ./share/applications/*.desktop ./ && cp ./share/icons/*/*/*/* ./htop.svg && ln -s ./htop.svg ./.DirIcon || exit 1
+#cp ./share/applications/*.desktop ./ && cp ./share/icons/*/*/*/* ./htop.svg && ln -s ./htop.svg ./.DirIcon || exit 1 # Causes a sigsegv with appimagetool
+cp ./share/applications/*.desktop ./ && cp ./share/pixmaps/* ./htop.png && ln -s ./htop.png ./.DirIcon || exit 1 # Doesn't cause the sigsegv.
 
 # AppRun
 cat >> ./AppRun << 'EOF'
@@ -24,8 +26,8 @@ CURRENTDIR="$(readlink -f "$(dirname "$0")")"
 EOF
 chmod a+x ./AppRun
 
-APPVERSION=$(./AppRun -V)
-if [ -z "$APPVERSION" ]; then echo "Failed to get version from zenity"; exit 1; fi
+APPVERSION=$(./AppRun -V | awk '{print $2}')
+if [ -z "$APPVERSION" ]; then echo "Failed to get version from htop"; exit 1; fi
 
 # MAKE APPIMAGE
 cd ..
