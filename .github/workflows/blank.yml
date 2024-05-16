@@ -10,14 +10,14 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
 
     - name: build
       run: |
         sudo apt update
-        sudo apt install libfuse2 libsensors
+        sudo apt install libfuse2 libsensors-dev
         sudo apt install libncursesw5-dev autotools-dev autoconf automake build-essential meson ninja-build
         wget https://raw.githubusercontent.com/Samueru-sama/htop-AppImage/main/htop-appimage.sh
         chmod a+x ./htop-appimage.sh
