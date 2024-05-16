@@ -11,7 +11,7 @@ mkdir -p ./"$APP/$APPDIR" && cd ./"$APP/$APPDIR" || exit 1
 # DOWNLOAD AND BUILD HTOP
 CURRENTDIR="$(readlink -f "$(dirname "$0")")" # DO NOT MOVE THIS
 version=$(wget -q https://api.github.com/repos/$SITE/releases -O - | sed 's/[()",{}]/ /g; s/ /\n/g' | grep -o 'https.*releases.*htop.*tar.xz' | head -1)
-wget "$version" && tar fx ./*tar* && cd ./htop* && ./autogen.sh && ./configure --prefix="$CURRENTDIR" \
+wget "$version" && tar fx ./*tar* && cd ./htop* && ./autogen.sh && ./configure --prefix="$CURRENTDIR" --enable-sensors \
 && make && make install && cd .. && rm -rf ./htop* ./*tar* || exit 1
 
 # PREPARE APPIMAGE
