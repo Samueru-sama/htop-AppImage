@@ -17,8 +17,8 @@ jobs:
     - name: build
       run: |
         sudo apt update
-        sudo apt install libfuse2 libsensors-dev libdrm-dev libudev-dev file meson ninja-build
-        sudo apt install libncursesw5-dev autotools-dev autoconf automake build-essential
+        sudo apt install libfuse2 libsensors-dev libdrm-dev libudev-dev libncursesw5-dev file libcap-dev
+        sudo apt install ninja-build autotools-dev autoconf automake build-essential meson
         wget https://raw.githubusercontent.com/Samueru-sama/htop-AppImage/main/htop-appimage.sh
         chmod a+x ./htop-appimage.sh
         ./htop-appimage.sh
