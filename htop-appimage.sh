@@ -21,7 +21,7 @@ cp ./share/applications/*.desktop ./ && cp ./share/pixmaps/* ./htop.png && ln -s
 # AppRun
 cat >> ./AppRun << 'EOF'
 #!/bin/sh
-CURRENTDIR="$(readlink -f "$(dirname "$0")")"
+CURRENTDIR="$(dirname "$(readlink -f "$0")")"
 "$CURRENTDIR/bin/htop" "$@"
 EOF
 chmod a+x ./AppRun
