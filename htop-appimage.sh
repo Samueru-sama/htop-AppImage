@@ -1,12 +1,11 @@
 #!/bin/sh
-
+set -u
 APP=htop
 APPDIR="$APP".AppDir
 SITE="htop-dev/htop"
 
 # CREATE DIRECTORIES
-if [ -z "$APP" ]; then exit 1; fi
-mkdir -p ./"$APP/$APPDIR" && cd ./"$APP/$APPDIR" || exit 1
+[ -n "$APP" ] && mkdir -p ./"$APP/$APPDIR" && cd ./"$APP/$APPDIR" || exit 1
 
 # DOWNLOAD AND BUILD HTOP
 CURRENTDIR="$(dirname "$(readlink -f "$0")")" # DO NOT MOVE THIS
@@ -25,18 +24,16 @@ CURRENTDIR="$(dirname "$(readlink -f "$0")")"
 "$CURRENTDIR/bin/htop" "$@"
 EOF
 chmod a+x ./AppRun
-
 APPVERSION=$(./AppRun -V | awk '{print $2}')
 if [ -z "$APPVERSION" ]; then echo "Failed to get version from htop"; exit 1; fi
 
 # MAKE APPIMAGE
 cd ..
-APPIMAGETOOL=$(wget -q https://api.github.com/repos/probonopd/go-appimage/releases -O - | sed 's/"/ /g; s/ /\n/g' | grep -o 'https.*continuous.*tool.*86_64.*mage$')
+APPIMAGETOOL=$(wget -q https://api.github.com/repos/probonopd/go-appimage/releases -O - | sed 's/"/ /g; s/ /\n/g' | grep -oi 'https.*continuous.*tool.*86_64.*mage$')
 wget -q "$APPIMAGETOOL" -O ./appimagetool && chmod a+x ./appimagetool
 
 # Do the thing!
 ARCH=x86_64 VERSION="$APPVERSION" ./appimagetool -s ./"$APPDIR"
 ls ./*.AppImage || { echo "appimagetool failed to make the appimage"; exit 1; }
-if [ -z "$APP" ]; then exit 1; fi # Being extra safe lol
-mv ./*.AppImage .. && cd .. && rm -rf ./"$APP"
+[ -n "$APP" ] && mv ./*.AppImage .. && cd .. && rm -rf ./"$APP"
 echo "All Done!"
