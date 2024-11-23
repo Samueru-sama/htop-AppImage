@@ -1,39 +1,57 @@
 #!/bin/sh
-set -u
+
+set -eu
+
+export ARCH="$(uname -m)"
+export APPIMAGE_EXTRACT_AND_RUN=1
+
 APP=htop
 APPDIR="$APP".AppDir
 SITE="htop-dev/htop"
+UPINFO="gh-releases-zsync|$(echo $GITHUB_REPOSITORY | tr '/' '|')|continuous|*$ARCH.AppImage.zsync"
+APPIMAGETOOL="https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-$ARCH.AppImage"
 
 # CREATE DIRECTORIES
-[ -n "$APP" ] && mkdir -p ./"$APP/$APPDIR" && cd ./"$APP/$APPDIR" || exit 1
+mkdir -p ./"$APP"/AppDir
+cd ./"$APP"/AppDir
 
 # DOWNLOAD AND BUILD HTOP
 CURRENTDIR="$(dirname "$(readlink -f "$0")")" # DO NOT MOVE THIS
-version=$(wget -q https://api.github.com/repos/$SITE/releases -O - | sed 's/[()",{}]/ /g; s/ /\n/g' | grep -o 'https.*releases.*htop.*tar.xz' | head -1)
-wget "$version" && tar fx ./*tar* && cd ./htop* && ./autogen.sh && ./configure --prefix="$CURRENTDIR" --enable-sensors --enable-static \
-&& make && make install && cd .. && rm -rf ./htop* ./*tar* || exit 1
+HTOP_URL=$(wget -q https://api.github.com/repos/$SITE/releases -O - \
+	| sed 's/[()",{} ]/\n/g' | grep -oi 'https.*releases.*htop.*tar.xz' | head -1)
+
+wget "$HTOP_URL"
+tar fx ./*.tar.*
+
+cd ./htop*
+./autogen.sh
+./configure --prefix="$CURRENTDIR" --enable-sensors --enable-static
+make
+make install
+cd ..
+rm -rf ./htop* ./*.tar.*
 
 # PREPARE APPIMAGE
-#cp ./share/applications/*.desktop ./ && cp ./share/icons/*/*/*/* ./htop.svg && ln -s ./htop.svg ./.DirIcon || exit 1 # Causes a sigsegv with appimagetool
-cp ./share/applications/*.desktop ./ && cp ./share/pixmaps/* ./htop.png && ln -s ./htop.png ./.DirIcon || exit 1 # Doesn't cause the sigsegv.
+cp ./share/applications/*.desktop ./
+cp ./share/pixmaps/* ./htop.png
+ln -s ./htop.png ./.DirIcon
 
 # AppRun
 cat >> ./AppRun << 'EOF'
-#!/bin/sh
+#!/usr/bin/env sh
 CURRENTDIR="$(dirname "$(readlink -f "$0")")"
-"$CURRENTDIR/bin/htop" "$@"
+"$CURRENTDIR"/bin/htop "$@"
 EOF
-chmod a+x ./AppRun
-APPVERSION=$(./AppRun -V | awk '{print $2}')
-if [ -z "$APPVERSION" ]; then echo "Failed to get version from htop"; exit 1; fi
+chmod +x ./AppRun
+VERSION="$(./AppRun -V | awk '{print $2}')"
 
 # MAKE APPIMAGE
 cd ..
-APPIMAGETOOL=$(wget -q https://api.github.com/repos/probonopd/go-appimage/releases -O - | sed 's/"/ /g; s/ /\n/g' | grep -oi 'https.*continuous.*tool.*86_64.*mage$')
-wget -q "$APPIMAGETOOL" -O ./appimagetool && chmod a+x ./appimagetool
-
-# Do the thing!
-ARCH=x86_64 VERSION="$APPVERSION" ./appimagetool -s ./"$APPDIR"
-ls ./*.AppImage || { echo "appimagetool failed to make the appimage"; exit 1; }
-[ -n "$APP" ] && mv ./*.AppImage .. && cd .. && rm -rf ./"$APP"
+wget -q "$APPIMAGETOOL" -O ./appimagetool
+chmod +x ./appimagetool
+./appimagetool --comp zstd \
+	--mksquashfs-opt -Xcompression-level --mksquashfs-opt 22 \
+	-n -u "$UPINFO" "$PWD"/AppDir "$PWD"/"$APP"-"$VERSION"-anylinux-"$ARCH".AppImage
+mv ./*.AppImage* ..
+rm -rf ./"$APP"
 echo "All Done!"
